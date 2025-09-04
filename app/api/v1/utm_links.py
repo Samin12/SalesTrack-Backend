@@ -654,3 +654,65 @@ async def bulk_generate_utm_links(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to generate bulk UTM links: {str(e)}")
+
+
+# Bulk Delete UTM Links Endpoint
+@router.delete("/utm/bulk-delete")
+async def bulk_delete_utm_links(
+    confirm: bool = False,
+    db: Session = Depends(get_db)
+):
+    """
+    Bulk delete all UTM tracking links.
+
+    This endpoint deletes all UTM links and their associated click data from the database.
+    Use with caution as this action cannot be undone.
+
+    Args:
+        confirm: Must be set to True to confirm the deletion
+
+    Returns:
+        JSON response with deletion status and count of deleted links
+    """
+    try:
+        if not confirm:
+            raise HTTPException(
+                status_code=400,
+                detail="Confirmation required. Set confirm=true to proceed with bulk deletion."
+            )
+
+        # Get count of links before deletion
+        total_links = db.query(UTMLink).count()
+        total_clicks = db.query(LinkClick).count()
+
+        if total_links == 0:
+            return {
+                "status": "success",
+                "message": "No UTM links found to delete",
+                "deleted_links": 0,
+                "deleted_clicks": 0
+            }
+
+        # Delete all click records first (due to foreign key constraints)
+        deleted_clicks = db.query(LinkClick).delete()
+
+        # Delete all UTM links
+        deleted_links = db.query(UTMLink).delete()
+
+        # Commit the transaction
+        db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Successfully deleted {deleted_links} UTM links and {deleted_clicks} click records",
+            "deleted_links": deleted_links,
+            "deleted_clicks": deleted_clicks,
+            "total_links_before": total_links,
+            "total_clicks_before": total_clicks
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete UTM links: {str(e)}")
