@@ -81,9 +81,10 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", status_code=200)
 async def health_check():
     """Health check endpoint for deployment verification."""
+    from fastapi import Response
     try:
         # Simple health check without database dependency
         return {
@@ -98,12 +99,11 @@ async def health_check():
             }
         }
     except Exception as e:
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "environment": settings.ENVIRONMENT,
-            "version": settings.VERSION
-        }
+        return Response(
+            content=f'{{"status": "unhealthy", "error": "{str(e)}"}}',
+            status_code=500,
+            media_type="application/json"
+        )
 
 
 # Include API routers
