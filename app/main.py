@@ -84,31 +84,13 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for deployment verification."""
-    import os
-    import sqlite3
-
     try:
-        # Check database connection
-        db_path = "youtube_analytics.db"
-        db_exists = os.path.exists(db_path)
-
-        if db_exists:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM utm_links")
-            utm_count = cursor.fetchone()[0]
-            conn.close()
-        else:
-            utm_count = 0
-
+        # Simple health check without database dependency
         return {
             "status": "healthy",
             "environment": settings.ENVIRONMENT,
             "version": settings.VERSION,
-            "database": {
-                "exists": db_exists,
-                "utm_links_count": utm_count
-            },
+            "message": "Backend API is running",
             "features": {
                 "utm_tracking": True,
                 "pretty_urls": True,
