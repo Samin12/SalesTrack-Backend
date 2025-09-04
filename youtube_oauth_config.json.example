@@ -1,0 +1,13 @@
+{
+  "web": {
+    "client_id": "118594423108-6hspek0j3khu43vj4mb-ko2l8l7fiopS.apps.googleusercontent.com",
+    "project_id": "your-project-id-here",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "YOUR_CLIENT_SECRET_FROM_GOOGLE_CLOUD",
+    "redirect_uris": [
+      "http://localhost:8000/api/v1/youtube-auth/callback"
+    ]
+  }
+}
