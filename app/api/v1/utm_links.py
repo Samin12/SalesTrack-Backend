@@ -508,3 +508,149 @@ async def get_ga4_status():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get GA4 status: {str(e)}")
+
+
+# Bulk UTM Generation Endpoint
+@router.post("/utm/bulk-generate")
+async def bulk_generate_utm_links(
+    destination_url: str,
+    tracking_type: str = "direct_posthog",
+    utm_campaign: Optional[str] = None,
+    utm_source: str = "youtube",
+    utm_medium: str = "video",
+    db: Session = Depends(get_db)
+):
+    """
+    Bulk generate UTM tracking links for all active YouTube videos.
+
+    This endpoint creates UTM tracking links for every video in the database,
+    allowing you to quickly set up tracking for your entire video library.
+
+    Args:
+        destination_url: The target URL where all UTM links should redirect
+        tracking_type: Either "server_redirect" or "direct_posthog"
+        utm_campaign: Campaign name for UTM parameters (optional)
+        utm_source: UTM source parameter (defaults to "youtube")
+        utm_medium: UTM medium parameter (defaults to "video")
+
+    Returns:
+        JSON response with success status, total links generated, and array of UTM links
+    """
+    try:
+        utm_service = UTMService(db)
+
+        # Get all active videos from the database
+        from app.models.video import Video
+        videos = db.query(Video).filter(Video.is_active == True).all()
+
+        if not videos:
+            raise HTTPException(status_code=404, detail="No active videos found in database")
+
+        generated_links = []
+
+        for video in videos:
+            # Use video title or video ID as campaign if not provided
+            campaign = utm_campaign or f"video_{video.video_id}"
+
+            # Check if UTM link already exists for this video and destination
+            existing_link = db.query(UTMLink).filter(
+                UTMLink.video_id == video.video_id,
+                UTMLink.destination_url == destination_url
+            ).first()
+
+            if existing_link:
+                # Update existing link
+                existing_link.utm_source = utm_source
+                existing_link.utm_medium = utm_medium
+                existing_link.utm_campaign = campaign
+                existing_link.utm_content = video.video_id
+                existing_link.tracking_type = tracking_type
+
+                # Regenerate tracking URL with new parameters
+                utm_params = {
+                    'utm_source': utm_source,
+                    'utm_medium': utm_medium,
+                    'utm_campaign': campaign,
+                    'utm_content': video.video_id
+                }
+                existing_link.tracking_url = utm_service._build_tracking_url(destination_url, utm_params)
+                existing_link.direct_url = existing_link.tracking_url if tracking_type == "direct_posthog" else None
+
+                generated_links.append({
+                    "id": existing_link.id,
+                    "video_id": existing_link.video_id,
+                    "video_title": video.title,
+                    "destination_url": existing_link.destination_url,
+                    "tracking_url": existing_link.tracking_url,
+                    "utm_source": existing_link.utm_source,
+                    "utm_medium": existing_link.utm_medium,
+                    "utm_campaign": existing_link.utm_campaign,
+                    "utm_content": existing_link.utm_content,
+                    "tracking_type": existing_link.tracking_type,
+                    "shareable_url": existing_link.shareable_url,
+                    "created_at": existing_link.created_at,
+                    "status": "updated"
+                })
+            else:
+                # Create new UTM link
+                utm_link = utm_service.create_utm_link(
+                    video_id=video.video_id,
+                    destination_url=destination_url,
+                    utm_content=video.video_id,
+                    tracking_type=tracking_type
+                )
+
+                # Update UTM parameters
+                utm_link.utm_source = utm_source
+                utm_link.utm_medium = utm_medium
+                utm_link.utm_campaign = campaign
+
+                # Regenerate tracking URL with custom parameters
+                utm_params = {
+                    'utm_source': utm_source,
+                    'utm_medium': utm_medium,
+                    'utm_campaign': campaign,
+                    'utm_content': video.video_id
+                }
+                utm_link.tracking_url = utm_service._build_tracking_url(destination_url, utm_params)
+                utm_link.direct_url = utm_link.tracking_url if tracking_type == "direct_posthog" else None
+
+                generated_links.append({
+                    "id": utm_link.id,
+                    "video_id": utm_link.video_id,
+                    "video_title": video.title,
+                    "destination_url": utm_link.destination_url,
+                    "tracking_url": utm_link.tracking_url,
+                    "utm_source": utm_link.utm_source,
+                    "utm_medium": utm_link.utm_medium,
+                    "utm_campaign": utm_link.utm_campaign,
+                    "utm_content": utm_link.utm_content,
+                    "tracking_type": utm_link.tracking_type,
+                    "shareable_url": utm_link.shareable_url,
+                    "created_at": utm_link.created_at,
+                    "status": "created"
+                })
+
+        # Commit all changes
+        db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Successfully generated {len(generated_links)} UTM links",
+            "total_links_generated": len(generated_links),
+            "total_videos_processed": len(videos),
+            "destination_url": destination_url,
+            "utm_parameters": {
+                "utm_source": utm_source,
+                "utm_medium": utm_medium,
+                "utm_campaign": utm_campaign,
+                "tracking_type": tracking_type
+            },
+            "links": generated_links
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to generate bulk UTM links: {str(e)}")
