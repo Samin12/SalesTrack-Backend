@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     DESCRIPTION: str = "YouTube Analytics Tracking System API"
     BASE_URL: str = "http://localhost:8000"
     
-    # Database
-    DATABASE_URL: str = "sqlite:///./youtube_analytics.db"
+    # Database (Railway provides DATABASE_URL, fallback to SQLite for local dev)
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./youtube_analytics.db")
 
     # Supabase Configuration
     SUPABASE_URL: Optional[str] = None
