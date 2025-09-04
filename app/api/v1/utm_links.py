@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.services.utm_service import UTMService
 # GA4 service removed - using PostHog for analytics
 from app.services.posthog_service import posthog_service
-from app.models.utm_link import UTMLink
+from app.models.utm_link import UTMLink, LinkClick
 from app.api.v1.utm_schemas import (
     UTMLinkCreate,
     UTMLinkResponse,
