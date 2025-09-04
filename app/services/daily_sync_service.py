@@ -54,7 +54,13 @@ class DailySyncService:
                 return True  # No previous sync found
             
             # Check if enough time has passed
-            time_since_sync = datetime.now(timezone.utc) - last_sync.completed_at
+            # Ensure both datetimes are timezone-aware
+            now_utc = datetime.now(timezone.utc)
+            completed_at = last_sync.completed_at
+            if completed_at.tzinfo is None:
+                completed_at = completed_at.replace(tzinfo=timezone.utc)
+
+            time_since_sync = now_utc - completed_at
             sync_interval = timedelta(hours=sync_config.sync_frequency_hours)
             
             return time_since_sync >= sync_interval

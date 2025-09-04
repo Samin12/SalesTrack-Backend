@@ -81,29 +81,15 @@ async def root():
     }
 
 
-@app.get("/health", status_code=200)
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"message": "YouTube Analytics API", "status": "running"}
+
+@app.get("/health")
 async def health_check():
     """Health check endpoint for deployment verification."""
-    from fastapi import Response
-    try:
-        # Simple health check without database dependency
-        return {
-            "status": "healthy",
-            "environment": settings.ENVIRONMENT,
-            "version": settings.VERSION,
-            "message": "Backend API is running",
-            "features": {
-                "utm_tracking": True,
-                "pretty_urls": True,
-                "click_analytics": True
-            }
-        }
-    except Exception as e:
-        return Response(
-            content=f'{{"status": "unhealthy", "error": "{str(e)}"}}',
-            status_code=500,
-            media_type="application/json"
-        )
+    return {"status": "healthy", "message": "API is running"}
 
 
 # Include API routers
