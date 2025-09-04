@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.services.utm_service import UTMService
-from app.services.ga4_service import ga4_service  # Keep for migration period
+# GA4 service removed - using PostHog for analytics
 from app.services.posthog_service import posthog_service
 from app.models.utm_link import UTMLink
 from app.api.v1.utm_schemas import (
@@ -164,19 +164,7 @@ async def record_link_click(
             from loguru import logger
             logger.warning(f"PostHog event tracking failed for link {link_id}: {posthog_error}")
 
-        # Legacy GA4 tracking (keeping for migration period)
-        try:
-            if utm_link and utm_link.ga4_enabled:
-                await ga4_service.send_utm_click_event(
-                    utm_link=utm_link,
-                    user_agent=user_agent,
-                    ip_address=ip_address,
-                    referrer=referrer
-                )
-        except Exception as ga4_error:
-            # Don't fail the request if GA4 tracking fails
-            from loguru import logger
-            logger.warning(f"GA4 event tracking failed for link {link_id}: {ga4_error}")
+        # GA4 tracking removed - using PostHog for analytics
 
         return click
     except Exception as e:
@@ -274,19 +262,7 @@ async def redirect_utm_link(
             from loguru import logger
             logger.warning(f"PostHog event tracking failed for link {link_id}: {posthog_error}")
 
-        # Legacy GA4 tracking (keeping for migration period)
-        try:
-            if utm_link.ga4_enabled:
-                await ga4_service.send_utm_click_event(
-                    utm_link=utm_link,
-                    user_agent=request.headers.get("user-agent"),
-                    ip_address=request.client.host if request.client else None,
-                    referrer=request.headers.get("referer")
-                )
-        except Exception as ga4_error:
-            # Don't fail the request if GA4 tracking fails
-            from loguru import logger
-            logger.warning(f"GA4 event tracking failed for link {link_id}: {ga4_error}")
+        # GA4 tracking removed - using PostHog for analytics
 
         # For direct GA4 links, redirect to the direct URL with UTM parameters
         # For server redirect links, redirect to the destination URL
@@ -351,19 +327,7 @@ async def track_direct_ga4_click(
             from loguru import logger
             logger.warning(f"PostHog event tracking failed for link {link_id}: {posthog_error}")
 
-        # Legacy GA4 tracking (keeping for migration period)
-        try:
-            if utm_link.ga4_enabled:
-                await ga4_service.send_utm_click_event(
-                    utm_link=utm_link,
-                    user_agent=request.headers.get("user-agent"),
-                    ip_address=request.client.host if request.client else None,
-                    referrer=request.headers.get("referer")
-                )
-        except Exception as ga4_error:
-            # Don't fail the request if GA4 tracking fails
-            from loguru import logger
-            logger.warning(f"GA4 event tracking failed for link {link_id}: {ga4_error}")
+        # GA4 tracking removed - using PostHog for analytics
 
         # Redirect to destination with UTM parameters
         return RedirectResponse(url=utm_link.direct_url, status_code=302)
@@ -420,19 +384,7 @@ async def redirect_pretty_utm_link(
             from loguru import logger
             logger.warning(f"PostHog event tracking failed for link {utm_link.id}: {posthog_error}")
 
-        # Legacy GA4 tracking (keeping for migration period)
-        try:
-            if utm_link.ga4_enabled:
-                await ga4_service.send_utm_click_event(
-                    utm_link=utm_link,
-                    user_agent=request.headers.get("user-agent"),
-                    ip_address=request.client.host if request.client else None,
-                    referrer=request.headers.get("referer")
-                )
-        except Exception as ga4_error:
-            # Don't fail the request if GA4 tracking fails
-            from loguru import logger
-            logger.warning(f"GA4 event tracking failed for link {utm_link.id}: {ga4_error}")
+        # GA4 tracking removed - using PostHog for analytics
 
         # Redirect based on tracking type
         if utm_link.tracking_type in ['direct_posthog', 'direct_ga4']:
@@ -526,23 +478,7 @@ async def disable_ga4_tracking(
         raise HTTPException(status_code=500, detail=f"Failed to disable GA4 tracking: {str(e)}")
 
 
-@router.post("/ga4/sync")
-async def sync_ga4_data(
-    days_back: int = Query(7, description="Number of days to sync"),
-    db: Session = Depends(get_db)
-):
-    """Manually trigger GA4 data sync to local database."""
-    try:
-        result = await ga4_service.sync_ga4_data_to_database(days_back=days_back)
-        return {
-            "success": True,
-            "message": "GA4 data sync completed",
-            "synced_records": result["synced"],
-            "errors": result["errors"],
-            "days_synced": days_back
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"GA4 sync failed: {str(e)}")
+# GA4 sync endpoint removed - using PostHog for analytics
 
 
 @router.get("/ga4/status")

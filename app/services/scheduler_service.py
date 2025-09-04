@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.services.daily_sync_service import DailySyncService
-from app.services.ga4_service import ga4_service
+# GA4 service removed - using PostHog for analytics
 from app.models.daily_sync import SyncConfiguration
 from app.core.config import get_youtube_config
 
@@ -147,14 +147,7 @@ class SchedulerService:
             if channel_id in self.sync_tasks:
                 del self.sync_tasks[channel_id]
 
-    async def _run_ga4_sync(self):
-        """Run Google Analytics 4 data sync."""
-        try:
-            logger.info("Starting GA4 data sync")
-            result = await ga4_service.sync_ga4_data_to_database(days_back=7)
-            logger.info(f"GA4 sync completed: {result['synced']} records synced, {result['errors']} errors")
-        except Exception as e:
-            logger.error(f"GA4 sync failed: {e}")
+    # GA4 sync removed - using PostHog for analytics
     
     async def trigger_manual_sync(self, channel_id: str, force: bool = False) -> str:
         """Manually trigger a sync for a specific channel."""
