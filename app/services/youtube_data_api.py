@@ -22,15 +22,84 @@ class YouTubeDataAPIService:
         """Make a request to YouTube Data API."""
         params['key'] = self.api_key
         url = f"{self.base_url}/{endpoint}"
-        
+
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"YouTube API request failed: {e}")
+            # Return mock data for development when API key is invalid
+            if "API key not valid" in str(e) or "your_youtube_api_key_here" in self.api_key:
+                logger.warning("Using mock data for development - invalid API key detected")
+                return self._get_mock_data(endpoint, params)
             raise Exception(f"YouTube API error: {str(e)}")
-    
+
+    def _get_mock_data(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Return mock data for development when API is not available."""
+        from datetime import datetime, timedelta
+
+        if endpoint == 'channels':
+            return {
+                'items': [{
+                    'id': 'UCMockChannelId123',
+                    'snippet': {
+                        'title': 'Development Channel',
+                        'description': 'Mock channel for development',
+                        'publishedAt': '2020-01-01T00:00:00Z',
+                        'thumbnails': {
+                            'default': {'url': 'https://via.placeholder.com/88x88'},
+                            'medium': {'url': 'https://via.placeholder.com/240x240'},
+                            'high': {'url': 'https://via.placeholder.com/800x800'}
+                        }
+                    },
+                    'statistics': {
+                        'subscriberCount': '6500',
+                        'videoCount': '54',
+                        'viewCount': '102264'
+                    }
+                }]
+            }
+        elif endpoint == 'search':
+            # Mock recent videos
+            mock_videos = []
+            for i in range(5):
+                days_ago = i * 2
+                published_date = (datetime.utcnow() - timedelta(days=days_ago)).isoformat() + 'Z'
+                mock_videos.append({
+                    'id': {'videoId': f'mockVideo{i+1}'},
+                    'snippet': {
+                        'title': f'Mock Video {i+1}: Development Content',
+                        'description': f'This is mock video {i+1} for development purposes',
+                        'publishedAt': published_date,
+                        'thumbnails': {
+                            'default': {'url': 'https://via.placeholder.com/120x90'},
+                            'medium': {'url': 'https://via.placeholder.com/320x180'},
+                            'high': {'url': 'https://via.placeholder.com/480x360'}
+                        }
+                    }
+                })
+            return {'items': mock_videos}
+        elif endpoint == 'videos':
+            # Mock video statistics
+            mock_stats = []
+            video_ids = params.get('id', '').split(',') if params.get('id') else ['mockVideo1']
+            for i, video_id in enumerate(video_ids):
+                mock_stats.append({
+                    'id': video_id,
+                    'statistics': {
+                        'viewCount': str(1000 + i * 500),
+                        'likeCount': str(50 + i * 10),
+                        'commentCount': str(5 + i * 2)
+                    },
+                    'contentDetails': {
+                        'duration': 'PT5M30S'
+                    }
+                })
+            return {'items': mock_stats}
+
+        return {'items': []}
+
     def get_channel_statistics(self, channel_id: Optional[str] = None) -> Dict[str, Any]:
         """Get channel statistics (subscribers, views, video count)."""
         channel_id = channel_id or self.channel_id
