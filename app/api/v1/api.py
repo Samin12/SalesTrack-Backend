@@ -3,7 +3,7 @@ Main API router for v1 endpoints.
 """
 from fastapi import APIRouter
 
-from app.api.v1 import analytics, utm_links, conversions, youtube_auth, youtube_analytics_endpoints, youtube_data, sync
+from app.api.v1 import analytics, utm_links, conversions, youtube_auth, youtube_analytics_endpoints, youtube_data, sync, posthog
 # from app.api.v1 import auth  # Temporarily disabled for testing
 
 api_router = APIRouter()
@@ -17,3 +17,4 @@ api_router.include_router(youtube_auth.router, tags=["youtube-auth"])
 api_router.include_router(youtube_analytics_endpoints.router, tags=["youtube-analytics"])
 api_router.include_router(youtube_data.router, tags=["youtube-data"])
 api_router.include_router(sync.router, tags=["sync"])
+api_router.include_router(posthog.router, prefix="/posthog", tags=["posthog"])

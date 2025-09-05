@@ -376,6 +376,7 @@ class UTMService:
                 video_data[video_id] = {
                     'video_id': video_id,
                     'video_title': video.title if video else f"Video {video_id}",
+                    'publication_date': video.published_at.isoformat() if video and video.published_at else datetime.utcnow().isoformat(),
                     'video_views': video.view_count if video else 0,
                     'link_count': 0,
                     'total_clicks': 0
@@ -394,6 +395,7 @@ class UTMService:
             correlation_data.append({
                 'video_id': video_info['video_id'],
                 'video_title': video_info['video_title'],
+                'publication_date': video_info['publication_date'],
                 'video_views': video_info['video_views'],
                 'link_count': video_info['link_count'],
                 'total_clicks': video_info['total_clicks'],

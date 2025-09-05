@@ -182,6 +182,7 @@ class VideoTrafficCorrelationResponse(BaseModel):
     """Schema for video traffic correlation response."""
     video_id: str
     video_title: str
+    publication_date: str
     video_views: int
     link_count: int
     total_clicks: int
@@ -193,6 +194,7 @@ class VideoTrafficCorrelationResponse(BaseModel):
             "example": {
                 "video_id": "dQw4w9WgXcQ",
                 "video_title": "Never Gonna Give You Up",
+                "publication_date": "2025-08-26T13:06:48",
                 "video_views": 1000000,
                 "link_count": 3,
                 "total_clicks": 1500,
